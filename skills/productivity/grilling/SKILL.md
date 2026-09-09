@@ -5,23 +5,29 @@ description: Grill the user relentlessly about a plan, decision, or idea. Use wh
 
 Interview the user relentlessly until you reach a shared understanding. Map this as a **design tree**: every decision branches into the decisions that hang off it.
 
-Work the tree in **rounds**. The **frontier** is every decision whose prerequisites are already settled: the questions you can ask _now_ without guessing at answers you haven't heard yet. Ask the whole frontier in one round: number each question and give your recommended answer. Then wait for the user's answers before the next round.
+The **frontier** is every decision whose prerequisites are already settled: the questions you can ask _now_ without guessing at answers you haven't heard yet. Pick the frontier question that unblocks the most and ask **that one alone**. Never bundle questions.
 
-Format a round like so:
+## Asking a question
+
+Ask with the `AskUserQuestion` tool, one question per call, never as prose. Rules for every call:
+
+- **`multiSelect: true`**, so the user can combine options or pick none and type their own. The harness adds an "Other" free-text option automatically; do not add one yourself.
+- **Carry an example.** The `question` text ends with a short concrete example of what an answer looks like for _this_ project (e.g. "Which storage backend? For example: Postgres for orders, Redis for sessions.").
+- **2 to 4 options**, each `description` a one-line trade-off. Put your recommended option first with " (Recommended)" appended to its label.
+- Keep the `header` chip to a couple of words.
+
+If `AskUserQuestion` is unavailable in this harness, fall back to this format, still one question at a time:
 
 ```
-❓ **Q1** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
+❓ **<question title>**: <question body>. Example: <a plausible answer>
+   a) <option> (Recommended) b) <option> c) <option> d) Something else
 
-➡️ <your recommended answer>
-
----
-
-❓ **Q2** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
-
-➡️ <your recommended answer>
+➡️ <why you recommend a>
 ```
 
-Each round the user answers reshapes the tree: settled decisions push the frontier outward and unblock questions that depended on them. Recompute the frontier and ask the next round. A question whose answer depends on another question still open in this round belongs to a _later_ round, not this one.
+## Between questions
+
+Each answer reshapes the tree: settled decisions push the frontier outward and unblock questions that depended on them. Recompute the frontier and ask the next question.
 
 Finding _facts_ is your job, never the user's. When a frontier question needs a fact from the environment (filesystem, tools, etc.), dispatch a sub-agent to find it; don't ask the user for anything you could look up yourself. Don't block on it: a running exploration is an unsettled prerequisite, so only the questions downstream of it wait for the sub-agent to report; ask the rest of the frontier now. The _decisions_ are the user's: put each to them and wait.
 
